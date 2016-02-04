@@ -110,6 +110,7 @@ public:
 		while (true) {
 			if (!entityMap[id].inUse) {
 				entityMap[id].inUse = true;
+				entityMap[id].entity.id = id;
 				entityMap[id].entity.manager = this;
 				entityMap[id].entity.components.reset();
 				return entityMap[id].entity;
