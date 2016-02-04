@@ -24,33 +24,29 @@ struct TupleIndex;
 
 template <class Component, class ... Rest>
 struct TupleIndex<Component, std::tuple<ComponentContainer<Component>, Rest...>> {
-	static const std::size_t value = 0;
+	static constexpr std::size_t value = 0;
 };
 
 template <class Component, class First, class ... Rest>
 struct TupleIndex<Component, std::tuple<First, Rest...>> {
-	static const std::size_t value = 1 + TupleIndex<Component, std::tuple<Rest...>>::value;
+	static constexpr std::size_t value = 1 + TupleIndex<Component, std::tuple<Rest...>>::value;
 };
 
 template <class ComponentList, class ... Rest>
 struct TupleIndexForEach{
-	auto operator()(std::bitset<ComponentList::size> & bitset) {
-		return bitset;
-	}
+	static constexpr std::size_t value = 0;
 };
 
 template <class ComponentList, class First, class ... Rest>
 struct TupleIndexForEach<ComponentList, First, Rest...> {
-	auto operator()(std::bitset<ComponentList::size> & bitset) {
-		bitset[TupleIndex<First, ComponentList::type>::value] = 1;
-		return TupleIndexForEach<ComponentList, Rest...>()(bitset);
-	}
+	static constexpr std::size_t value = (1 << TupleIndex<First, ComponentList::type>::value)
+		+ TupleIndexForEach<ComponentList, Rest...>::value;
 };
 
 template <class ComponentList, class ... Components>
 struct TupleBitset {
 	auto value() {
-		return TupleIndexForEach<ComponentList, Components...>()(std::bitset<ComponentList::size>());
+		return std::bitset<ComponentList::size>(TupleIndexForEach<ComponentList, Components...>::value);
 	}
 };
 }

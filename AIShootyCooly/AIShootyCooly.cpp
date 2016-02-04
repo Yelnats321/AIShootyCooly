@@ -12,7 +12,11 @@ int main() {
 	auto ent = em.createEntity();
 	em.addComponent<sampleComponent1>(ent, 5);
 	auto component = em.getComponent<sampleComponent1>(ent);
-	auto ents = em.getEntities<sampleComponent2>();
+
+	em.getEntities<>();
+	em.getEntities<sampleComponent1>();
+	em.getEntities<sampleComponent2>();
+	auto ents = em.getEntities<sampleComponent1, sampleComponent2>();
 	while (renderer.isOpen()) {
 		renderer.draw();
 	}
