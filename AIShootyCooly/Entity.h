@@ -44,11 +44,9 @@ struct TupleIndexForEach<ComponentList, First, Rest...> {
 };
 
 template <class ComponentList, class ... Components>
-struct TupleBitset {
-	auto value() {
-		return std::bitset<ComponentList::size>(TupleIndexForEach<ComponentList, Components...>::value);
-	}
-};
+auto tupleBitset() {
+	return std::bitset<ComponentList::size>(TupleIndexForEach<ComponentList, Components...>::value);
+}
 }
 
 template <class Components>
@@ -152,7 +150,7 @@ public:
 	template <class ... ComponentsWanted>
 	EntityContainer getEntities() {
 		// temporary generated here, yuck!
-		auto bitset = TupleBitset<ComponentList, ComponentsWanted...>().value();
+		auto bitset = tupleBitset<ComponentList, ComponentsWanted...>();
 		EntityContainer entities;
 		for (const auto & entity : entityMap) {
 			if ((entity.second.entity.components & bitset) == bitset) {
