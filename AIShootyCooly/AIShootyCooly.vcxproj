@@ -71,7 +71,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>E:\glfw-3.1.2\include;E:\glew-1.13.0\include;E:\Programs\common\common;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Include;$(IncludePath)</IncludePath>
+    <IncludePath>E:\boost_1_59_0;E:\glfw-3.1.2\include;E:\glew-1.13.0\include;E:\Programs\common\common;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Include;$(IncludePath)</IncludePath>
     <LibraryPath>E:\glfw-3.1.2\src\RelWithDebInfo;E:\glew-1.13.0\lib\Release\Win32;E:\Programs\common\lib;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Lib\vc14win32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -79,7 +79,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>E:\glfw-3.1.2\include;E:\glew-1.13.0\include;E:\Programs\common\common;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Include;$(IncludePath)</IncludePath>
+    <IncludePath>E:\boost_1_59_0;E:\glfw-3.1.2\include;E:\glew-1.13.0\include;E:\Programs\common\common;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Include;$(IncludePath)</IncludePath>
     <LibraryPath>E:\glfw-3.1.2\src\RelWithDebInfo;E:\glew-1.13.0\lib\Release\Win32;E:\Programs\common\lib;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Lib\vc14win32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -147,11 +147,15 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Entity.h" />
+    <ClInclude Include="Physics.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AIShootyCooly.cpp" />
+    <ClCompile Include="Entity.cpp" />
+    <ClCompile Include="Physics.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
