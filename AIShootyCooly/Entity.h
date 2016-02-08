@@ -62,6 +62,32 @@ class Entity {
 	EntityID id = EntityID(0);
 	EntityVersion version = EntityVersion(0);
 	std::bitset<Components::size> components;
+
+public:
+	template <class Component, typename ... T>
+	void addComponent(T&& ... t) {
+		manager->addComponent<Component, T...>(*this, std::foward<T>(t)...);
+	}
+
+	template <class Component>
+	Component & getComponent() {
+		return manager->getComponent<Component>(*this);
+	}
+
+	template <class Component>
+	const Component & getComponent() const {
+		return manager->getComponent<Component>(*this);
+	}
+
+	template <class Component>
+	bool hasComponent() const {
+		return manager->hasComponent<Component>(*this);
+	}
+
+	template <class Component>
+	void removeComponent() {
+		manager->removeComponent<Component>(*this);
+	}
 };
 
 template<class ... T>
@@ -84,7 +110,7 @@ class EntityManager {
 	std::unordered_map<EntityID, EntityData> entityMap;
 
 
-	void confirmEntity(const MyEntity & entity) {
+	void confirmEntity(const MyEntity & entity) const {
 		if (entity.manager != this) {
 			throw std::invalid_argument("Entity does not belong to this EntityManager");
 		}
@@ -120,6 +146,7 @@ public:
 			}
 		}
 	}
+
 	void removeEntity(MyEntity && entity) {
 		confirmEntity(entity);
 		entityMap[entity.id].inUse = false;
@@ -135,9 +162,22 @@ public:
 	}
 
 	template <class Component>
-	Component & getComponent(MyEntity entity) {
+	Component & getComponent(const MyEntity & entity) {
+		return const_cast<Component &>
+			(static_cast<const EntityManager<ComponentList> *>(this)
+			 ->getComponent<Component>(entity));
+	}
+
+	template <class Component>
+	const Component & getComponent(const MyEntity & entity) const {
 		confirmEntity(entity);
 		return std::get<ComponentContainer<Component>>(components).at(entity.id);
+	}
+
+	template <class Component>
+	bool hasComponent(const MyEntity & entity) const {
+		confirmEntity(entity);
+		return entity.components[TupleIndex<Component, ComponentList::type>::value];
 	}
 
 	template <class Component>
@@ -150,7 +190,6 @@ public:
 
 	template <class ... ComponentsWanted>
 	EntityContainer getEntities() {
-		// temporary generated here, yuck!
 		auto bitset = tupleBitset<ComponentList, ComponentsWanted...>();
 		EntityContainer entities;
 		for (const auto & entity : entityMap) {
