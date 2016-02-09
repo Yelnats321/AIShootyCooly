@@ -36,9 +36,12 @@ int main() {
 	});
 
 	Model model("models/sponza-x/sponza.obj");
-	int width, height;
-	unsigned char* image =
-		SOIL_load_image("models/sponza-x/textures/background.tga", &width, &height, 0, SOIL_LOAD_RGB);
+	int width, height, channels;
+	auto image = SOIL_load_image("models/sponza-x/textures/background.tga",
+								 &width,
+								 &height, 
+								 &channels, 
+								 SOIL_LOAD_RGB);
 	SOIL_free_image_data(image);
 
 	auto oldTime = glfwGetTime();

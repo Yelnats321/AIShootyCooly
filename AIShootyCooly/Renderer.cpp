@@ -7,7 +7,7 @@ void error_callback(int error, const char* desc) {
 	std::cerr << "ERROR " << error << " - " << desc << std::endl;
 }
 float toRad(float deg) {
-	return deg * M_PI / 180.f;
+	return deg * float(M_PI) / 180.f;
 }
 }
 
@@ -81,16 +81,16 @@ void Renderer::updateLocation(float dt) {
 	ypos = WindowHeight / 2.0 - ypos;
 	glfwSetCursorPos(window, WindowWidth / 2.0, WindowHeight / 2.0);
 
-	horizontalAngle += MouseSpeed * dt * xpos;
-	verticalAngle += MouseSpeed * dt * ypos;
+	horizontalAngle += MouseSpeed * dt * float(xpos);
+	verticalAngle += MouseSpeed * dt * float(ypos);
 	if (verticalAngle < -M_PI / 2)
-		verticalAngle = -M_PI / 2;
+		verticalAngle = -float(M_PI) / 2;
 
 	else if (verticalAngle > M_PI / 2)
-		verticalAngle = M_PI / 2;
+		verticalAngle = float(M_PI) / 2;
 
 	if (horizontalAngle < 0 || horizontalAngle > 2 * M_PI) {
-		horizontalAngle = fmodf(horizontalAngle, 2 * M_PI);
+		horizontalAngle = fmodf(horizontalAngle, 2 * float(M_PI));
 	}
 
 	glm::vec3 direction(
@@ -142,7 +142,7 @@ void Renderer::updateLocation(float dt) {
 
 void Renderer::draw(const Model & model) {
 	static auto projection = glm::perspective<float>(toRad(50), float(WindowWidth) / WindowHeight,
-													 0.1, 50);
+													 0.1f, 50);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(program);
