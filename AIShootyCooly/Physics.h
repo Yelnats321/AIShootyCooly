@@ -13,4 +13,6 @@ public:
 	~Physics();
 
 	static Physics & getInstance();
+
+	void step(double);
 };

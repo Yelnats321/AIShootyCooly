@@ -1,9 +1,13 @@
 #include "stdafx.h"
 #include "Renderer.h"
+#include "Model.h"
 
 namespace {
 void error_callback(int error, const char* desc) {
 	std::cerr << "ERROR " << error << " - " << desc << std::endl;
+}
+float toRad(float deg) {
+	return deg * M_PI / 180.f;
 }
 }
 
@@ -27,15 +31,17 @@ Renderer::Renderer() {
 	glDepthFunc(GL_LESS);
 
 	// Setup a sample program
+	program.gen("shaders/pass.vert", "shaders/pass.frag");
+
+	viewProjectionLocation = glGetUniformLocation(program, "VP");
+
+	/*glUseProgram(program);
+
 	static const GLuint elements[] = {0, 1, 2};
 	static const GLfloat points[] = {
 		-0.7f,  1.0f, 0.0f, 0.3f, 0.2f, 0.4f,
-		-1.0f, -1.0f, 0.0f, 1.0f, 0.f,  0.f,
-		 1.0f, -1.0f, 0.0f, 0.f,  1.f,  0.f};
-
-	program.gen("shaders/pass.vert", "shaders/pass.frag");
-
-	glUseProgram(program);
+		-0.5f, -0.5f, 0.0f, 1.0f, 0.f,  0.f,
+		 0.5f, -1.0f, 0.0f, 0.f,  1.f,  0.f};
 
 	vao.gen();
 	glBindVertexArray(vao);
@@ -54,9 +60,7 @@ Renderer::Renderer() {
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)(sizeof(GLfloat) * 3));
 	glEnableVertexAttribArray(1);
 
-	glBindVertexArray(0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);*/
 }
 
 Renderer::~Renderer() {
@@ -68,14 +72,84 @@ bool Renderer::isOpen() const {
 	return !glfwWindowShouldClose(window);
 }
 
-void Renderer::draw() {
+void Renderer::updateLocation(float dt) {
+	static auto MouseSpeed = 0.12f, Speed = 10.0f;
+
+	double xpos, ypos;
+	glfwGetCursorPos(window, &xpos, &ypos);
+	xpos = WindowWidth / 2.0 - xpos;
+	ypos = WindowHeight / 2.0 - ypos;
+	glfwSetCursorPos(window, WindowWidth / 2.0, WindowHeight / 2.0);
+
+	horizontalAngle += MouseSpeed * dt * xpos;
+	verticalAngle += MouseSpeed * dt * ypos;
+	if (verticalAngle < -M_PI / 2)
+		verticalAngle = -M_PI / 2;
+
+	else if (verticalAngle > M_PI / 2)
+		verticalAngle = M_PI / 2;
+
+	if (horizontalAngle < 0 || horizontalAngle > 2 * M_PI) {
+		horizontalAngle = fmodf(horizontalAngle, 2 * M_PI);
+	}
+
+	glm::vec3 direction(
+		cos(verticalAngle) * sin(horizontalAngle),
+		sin(verticalAngle),
+		cos(verticalAngle) * cos(horizontalAngle)
+		);
+	glm::vec3 right = glm::vec3(
+		sin(horizontalAngle - M_PI / 2.0f),
+		0,
+		cos(horizontalAngle - M_PI / 2.0f)
+		);
+	glm::vec3 forward = glm::vec3(
+		sin(horizontalAngle),
+		0,
+		cos(horizontalAngle)
+		);
+
+	glm::vec3 up = glm::cross(right, direction);
+	// Move forward
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		cameraPos += forward * dt * Speed;
+	}
+	// Move backward
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+		cameraPos -= forward * dt * Speed;
+	}
+	// Strafe right
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+		cameraPos += right * dt * Speed;
+	}
+	// Strafe left
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+		cameraPos -= right * dt * Speed;
+	}
+	// Float up
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+		cameraPos += glm::vec3(0, 1, 0) * dt * Speed;
+	}
+	// Float down
+	if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
+		cameraPos -= glm::vec3(0, 1, 0) * dt * Speed;
+	}
+
+	cameraMatrix = glm::lookAt(cameraPos,
+							   cameraPos + direction,
+							   up);
+}
+
+void Renderer::draw(const Model & model) {
+	static auto projection = glm::perspective<float>(toRad(50), float(WindowWidth) / WindowHeight,
+													 0.1, 50);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	glUseProgram(program);
+	glUniformMatrix4fv(viewProjectionLocation, 1, GL_FALSE, glm::value_ptr(projection * cameraMatrix));
 	glViewport(0, 0, WindowWidth, WindowHeight);
 
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-
-	glBindVertexArray(vao);
-	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+	model.draw();
 
 	glfwSwapBuffers(window);
 	glfwPollEvents();

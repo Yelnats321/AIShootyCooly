@@ -46,3 +46,14 @@ Physics & Physics::getInstance() {
 	static Physics physics;
 	return physics;
 }
+
+void Physics::step(double dt) {
+	static double accumulator = 0.0f;
+	static double stepSize = 1.0f / 60.0f;
+	accumulator += dt;
+	if (accumulator < stepSize) return;
+	accumulator -= stepSize;
+	
+	scene->simulate(static_cast<PxReal>(stepSize));
+	scene->fetchResults(true);
+}

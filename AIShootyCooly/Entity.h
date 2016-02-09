@@ -16,14 +16,11 @@ template <> struct hash<EntityID> {
 }
 
 namespace {
-template<typename T>
-using ComponentContainer = std::unordered_map<EntityID, T>;
-
 template <class Component, class Rest>
 struct TupleIndex;
 
 template <class Component, class ... Rest>
-struct TupleIndex<Component, std::tuple<ComponentContainer<Component>, Rest...>> {
+struct TupleIndex<Component, std::tuple<Component, Rest...>> {
 	static constexpr std::size_t value = 0;
 };
 
@@ -39,7 +36,8 @@ struct TupleIndexForEach{
 
 template <class ComponentList, class First, class ... Rest>
 struct TupleIndexForEach<ComponentList, First, Rest...> {
-	static constexpr std::size_t value = (1 << TupleIndex<First, ComponentList::type>::value)
+	static constexpr std::size_t value = (1 << TupleIndex<ComponentList::template container<First>,
+										  typename ComponentList::type>::value)
 		+ TupleIndexForEach<ComponentList, Rest...>::value;
 };
 
@@ -49,12 +47,12 @@ auto tupleBitset() {
 }
 }
 
-template <class Components>
+template <class, class>
 class EntityManager;
 
-template<class Components>
+template<class Components, class Tags>
 class Entity {
-	using Manager = EntityManager<Components>;
+	using Manager = EntityManager<Components, Tags>;
 
 	friend class Manager;
 
@@ -92,17 +90,29 @@ public:
 
 template<class ... T>
 struct ComponentList {
-	using type = std::tuple<ComponentContainer<T>...>;
-
+	template<typename T>
+	using container = std::unordered_map<EntityID, T>;
+	using type = std::tuple<container<T>...>;
 	static constexpr auto size = std::tuple_size<type>::value;
 };
 
-template<class ComponentList>
+template<class ... T>
+struct TagList {
+	using type = std::tuple<T...>;
+	template<typename = void>
+	using container = std::unordered_set<EntityID>;
+	static constexpr auto size = std::tuple_size<type>::value;
+};
+
+template<class ComponentList, class TagList>
 class EntityManager {
-	using MyEntity = Entity<ComponentList>;
+	using MyEntity = Entity<ComponentList, TagList>;
 	using EntityContainer = std::vector<MyEntity>;
+	template<typename T>
+	using ComponentContainer = typename ComponentList::template container<T>;
 
 	typename ComponentList::type components;
+	std::array<typename TagList::template container<>, TagList::size> tags;
 	struct EntityData { 
 		bool inUse = false;
 		MyEntity entity;
@@ -157,14 +167,16 @@ public:
 	void addComponent(MyEntity & entity, T&& ... t) {
 		confirmEntity(entity);
 		std::get<ComponentContainer<Component>>(components).insert_or_assign(entity.id, Component(t ...));
-		entityMap[entity.id].entity.components[TupleIndex<Component, ComponentList::type>::value] = 1;
-		entity.components[TupleIndex<Component, ComponentList::type>::value] = 1;
+		entityMap[entity.id].entity.components[TupleIndex<ComponentContainer<Component>,
+			ComponentList::type>::value] = 1;
+		entity.components[TupleIndex<ComponentContainer<Component>,
+			ComponentList::type>::value] = 1;
 	}
 
 	template <class Component>
 	Component & getComponent(const MyEntity & entity) {
 		return const_cast<Component &>
-			(static_cast<const EntityManager<ComponentList> *>(this)
+			(static_cast<const EntityManager<ComponentList, TagList> *>(this)
 			 ->getComponent<Component>(entity));
 	}
 
@@ -177,15 +189,18 @@ public:
 	template <class Component>
 	bool hasComponent(const MyEntity & entity) const {
 		confirmEntity(entity);
-		return entity.components[TupleIndex<Component, ComponentList::type>::value];
+		return entity.components[TupleIndex<ComponentContainer<Component>,
+			ComponentList::type>::value];
 	}
 
 	template <class Component>
 	void removeComponent(MyEntity & entity) {
 		confirmEntity(entity);
 		std::get<ComponentContainer<Component>>(components).erase(entity.id);
-		entityMap[entity.id].entity.components[TupleIndex<Component, ComponentList::type>::value] = 0;
-		entity.components[TupleIndex<Component, ComponentList::type>::value] = 0;
+		entityMap[entity.id].entity.components[TupleIndex<ComponentContainer<Component>,
+			ComponentList::type>::value] = 0;
+		entity.components[TupleIndex<ComponentContainer<Component>,
+			ComponentList::type>::value] = 0;
 	}
 
 	template <class ... ComponentsWanted>
@@ -200,17 +215,3 @@ public:
 		return entities;
 	}
 };
-
-// Examples
-
-struct sampleComponent1 {
-	int x;
-	sampleComponent1(int _x): x(_x) {};
-};
-struct sampleComponent2 {
-	std::string text;
-	sampleComponent2(std::string _text): text(_text) {};
-};
-
-using Components = ComponentList<sampleComponent1, sampleComponent2>;
-using MyEntityManager = EntityManager<Components>;
