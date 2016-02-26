@@ -3,6 +3,20 @@
 #include <type_traits>
 #include <bitset>
 #include <boost/serialization/strong_typedef.hpp>
+#include <boost/mpl/set.hpp>
+#include <boost/mpl/vector.hpp>
+#include <boost/mpl/size.hpp>
+#include <boost/mpl/fold.hpp>
+#include <boost/mpl/find.hpp>
+#include <boost/mpl/distance.hpp>
+#include <boost/mpl/begin.hpp>
+#include <boost/mpl/end.hpp>
+#include <boost/mpl/has_key.hpp>
+#include <boost/mpl/accumulate.hpp>
+#include <boost/mpl/integral_c.hpp>
+#include <boost/mpl/bool.hpp>
+#include <boost/mpl/plus.hpp>
+#include <boost/mpl/arithmetic.hpp>
 
 BOOST_STRONG_TYPEDEF(std::size_t, EntityID)
 BOOST_STRONG_TYPEDEF(std::size_t, EntityVersion)
@@ -16,34 +30,66 @@ template <> struct hash<EntityID> {
 }
 
 namespace {
-template <class Component, class Rest>
-struct TupleIndex;
+namespace mpl = boost::mpl;
 
-template <class Component, class ... Rest>
-struct TupleIndex<Component, std::tuple<Component, Rest...>> {
-	static constexpr std::size_t value = 0;
+template <template <typename> class Container>
+struct stdTupleCreator {
+	template <class T, class R>
+	struct toStdTuple;
+
+	template <class... TTypes, class X>
+	struct toStdTuple<std::tuple<TTypes...>, X> {
+		using type = std::tuple<TTypes..., Container<X>>;
+	};
 };
 
-template <class Component, class First, class ... Rest>
-struct TupleIndex<Component, std::tuple<First, Rest...>> {
-	static constexpr std::size_t value = 1 + TupleIndex<Component, std::tuple<Rest...>>::value;
+template <class... Ts>
+struct setCreator {
+	using type =
+		typename mpl::fold<
+			mpl::vector<Ts...>,
+			mpl::set0<>,
+			mpl::insert<mpl::_1, mpl::_2>
+		>::type;
 };
+/*
+template <class Set1, class Set2>
+struct setIntersection {
+	using type =
+		typename mpl::fold<
+		Set1,
+		mpl::set0<>,
+		mpl::if_<mpl::has_key<Set2, mpl::_2>, mpl::insert<mpl::_1, mpl::_2>, mpl::_1>
+		>::type;
+};*/
 
-template <class ComponentList, class ... Rest>
-struct TupleIndexForEach{
-	static constexpr std::size_t value = 0;
-};
+template <class Set, class Index>
+constexpr int getIndex() {
+	return mpl::distance<
+			typename mpl::begin<Set>::type,
+			typename mpl::find<Set, Index>::type
+		>::type::value;
+}
 
-template <class ComponentList, class First, class ... Rest>
-struct TupleIndexForEach<ComponentList, First, Rest...> {
-	static constexpr std::size_t value = (1 << TupleIndex<ComponentList::template container<First>,
-										  typename ComponentList::type>::value)
-		+ TupleIndexForEach<ComponentList, Rest...>::value;
-};
+template <class Set, class Index>
+struct indexOffset : mpl::integral_c<unsigned long long, 1ull << getIndex<Set, Index>()> {};
 
-template <class ComponentList, class ... Components>
-auto tupleBitset() {
-	return std::bitset<ComponentList::size>(TupleIndexForEach<ComponentList, Components...>::value);
+template <class Set, class PartialSet>
+constexpr auto tupleBitset() {
+	using type = 
+		typename mpl::fold<
+			PartialSet,
+			mpl::integral_c<unsigned long long, 0>,
+			mpl::eval_if<
+				mpl::has_key<Set, mpl::_2>,
+				mpl::plus<
+					mpl::_1, 
+					indexOffset<Set, mpl::_2>
+				>,
+				mpl::_1
+			>
+		>::type;
+	return std::bitset<mpl::size<Set>::value>(type::value);
 }
 }
 
@@ -64,7 +110,7 @@ class Entity {
 public:
 	template <class Component, typename ... T>
 	void addComponent(T&& ... t) {
-		manager->addComponent<Component, T...>(*this, std::foward<T>(t)...);
+		manager->addComponent<Component, T...>(*this, std::forward<T>(t)...);
 	}
 
 	template <class Component>
@@ -88,28 +134,40 @@ public:
 	}
 };
 
-template<class ... T>
+template<class... Ts>
 struct ComponentList {
 	template<typename T>
 	using container = std::unordered_map<EntityID, T>;
-	using type = std::tuple<container<T>...>;
-	static constexpr auto size = std::tuple_size<type>::value;
+
+	using setType = typename setCreator<Ts...>::type;
+	using myStdTuple = stdTupleCreator<container>;
+	using type = typename mpl::fold<
+		setType,
+		std::tuple<>,
+		myStdTuple::toStdTuple<mpl::_1, mpl::_2>
+	>::type;
+	static constexpr auto size = mpl::size<setType>::value;
 };
 
-template<class ... T>
+template<class... Ts>
 struct TagList {
-	using type = std::tuple<T...>;
 	template<typename = void>
 	using container = std::unordered_set<EntityID>;
-	static constexpr auto size = std::tuple_size<type>::value;
+
+	using setType = typename setCreator<Ts...>::type;
+	using myStdTuple = stdTupleCreator<container>;
+	using type = typename mpl::fold<
+		setType,
+		std::tuple<>,
+		myStdTuple::toStdTuple<mpl::_1, mpl::_2>
+	>::type;
+	static constexpr auto size = mpl::size<setType>::value;
 };
 
 template<class ComponentList, class TagList>
 class EntityManager {
 	using MyEntity = Entity<ComponentList, TagList>;
 	using EntityContainer = std::vector<MyEntity>;
-	template<typename T>
-	using ComponentContainer = typename ComponentList::template container<T>;
 
 	typename ComponentList::type components;
 	std::array<typename TagList::template container<>, TagList::size> tags;
@@ -139,7 +197,7 @@ class EntityManager {
 		}
 	}
 public:
-	EntityManager() {};
+	EntityManager() {}
 
 	MyEntity createEntity() {
 		EntityID id(0);
@@ -166,11 +224,10 @@ public:
 	template <class Component, typename ... T>
 	void addComponent(MyEntity & entity, T&& ... t) {
 		confirmEntity(entity);
-		std::get<ComponentContainer<Component>>(components).insert_or_assign(entity.id, Component(t ...));
-		entityMap[entity.id].entity.components[TupleIndex<ComponentContainer<Component>,
-			ComponentList::type>::value] = 1;
-		entity.components[TupleIndex<ComponentContainer<Component>,
-			ComponentList::type>::value] = 1;
+		constexpr auto iterPos = getIndex<typename ComponentList::setType, Component>();
+		std::get<iterPos>(components).insert_or_assign(entity.id, Component(t ...));
+		entityMap[entity.id].entity.components[iterPos] = 1;
+		entity.components[iterPos] = 1;
 	}
 
 	template <class Component>
@@ -183,29 +240,30 @@ public:
 	template <class Component>
 	const Component & getComponent(const MyEntity & entity) const {
 		confirmEntity(entity);
-		return std::get<ComponentContainer<Component>>(components).at(entity.id);
+		constexpr auto iterPos = getIndex<typename ComponentList::setType, Component>();
+		return std::get<iterPos>(components).at(entity.id);
 	}
 
 	template <class Component>
 	bool hasComponent(const MyEntity & entity) const {
 		confirmEntity(entity);
-		return entity.components[TupleIndex<ComponentContainer<Component>,
-			ComponentList::type>::value];
+		constexpr auto iterPos = getIndex<typename ComponentList::setType, Component>();
+		return entity.components[iterPos];
 	}
 
 	template <class Component>
 	void removeComponent(MyEntity & entity) {
 		confirmEntity(entity);
-		std::get<ComponentContainer<Component>>(components).erase(entity.id);
-		entityMap[entity.id].entity.components[TupleIndex<ComponentContainer<Component>,
-			ComponentList::type>::value] = 0;
-		entity.components[TupleIndex<ComponentContainer<Component>,
-			ComponentList::type>::value] = 0;
+		constexpr auto iterPos = getIndex<typename ComponentList::setType, Component>();
+		std::get<iterPos>(components).erase(entity.id);
+		entityMap[entity.id].entity.components[iterPos] = 0;
+		entity.components[iterPos] = 0;
 	}
 
-	template <class ... ComponentsWanted>
+	template <class ... ThingsWanted>
 	EntityContainer getEntities() {
-		auto bitset = tupleBitset<ComponentList, ComponentsWanted...>();
+		using ThingSet = typename setCreator<ThingsWanted...>::type;
+		constexpr auto bitset = tupleBitset<typename ComponentList::setType, ThingSet>();
 		EntityContainer entities;
 		for (const auto & entity : entityMap) {
 			if ((entity.second.entity.components & bitset) == bitset) {
