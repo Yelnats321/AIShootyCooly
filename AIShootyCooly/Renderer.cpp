@@ -34,33 +34,10 @@ Renderer::Renderer() {
 	program.gen("shaders/pass.vert", "shaders/pass.frag");
 
 	viewProjectionLocation = glGetUniformLocation(program, "VP");
+	modelMatrixLocation = glGetUniformLocation(program, "M");
 
-	/*glUseProgram(program);
-
-	static const GLuint elements[] = {0, 1, 2};
-	static const GLfloat points[] = {
-		-0.7f,  1.0f, 0.0f, 0.3f, 0.2f, 0.4f,
-		-0.5f, -0.5f, 0.0f, 1.0f, 0.f,  0.f,
-		 0.5f, -1.0f, 0.0f, 0.f,  1.f,  0.f};
-
-	vao.gen();
-	glBindVertexArray(vao);
-
-	vbo.gen();
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
-
-	ebo.gen();
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
-	glEnableVertexAttribArray(0);
-
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)(sizeof(GLfloat) * 3));
-	glEnableVertexAttribArray(1);
-
-	glBindVertexArray(0);*/
+	// Bind textures
+	glUniform1i(glGetUniformLocation(program, "diffuseTex"), 0);
 }
 
 Renderer::~Renderer() {
@@ -149,7 +126,7 @@ void Renderer::draw(const Model & model) {
 	glUniformMatrix4fv(viewProjectionLocation, 1, GL_FALSE, glm::value_ptr(projection * cameraMatrix));
 	glViewport(0, 0, WindowWidth, WindowHeight);
 
-	model.draw();
+	model.draw(modelMatrixLocation);
 
 	glfwSwapBuffers(window);
 	glfwPollEvents();

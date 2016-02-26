@@ -1,11 +1,21 @@
 #include "stdafx.h"
 #include "Mesh.h"
+#include "TextureLoader.h"
 
 namespace {
 struct Vertex {
 	glm::vec3 position;
 	glm::vec3 normal;
+	glm::vec2 uv;
 };
+
+auto locationAppend(std::string origin, const std::string & file) {
+	boost::replace(origin, '/', '\\');
+	auto lastOf = origin.find_last_of('\\');
+	if (lastOf != std::string::npos) {
+		return origin.substr(0, lastOf + 1) + file;
+	}
+}
 }
 
 const std::vector<Mesh> & Mesh::loadModel(const std::string & modelName) {
@@ -17,37 +27,57 @@ const std::vector<Mesh> & Mesh::loadModel(const std::string & modelName) {
 									   aiProcess_JoinIdenticalVertices |
 									   aiProcess_Triangulate |
 									   aiProcess_ImproveCacheLocality |
-									   aiProcess_RemoveRedundantMaterials/* |
+									   aiProcess_RemoveRedundantMaterials |
+									   aiProcess_FlipUVs/* |
 									   aiProcess_RemoveComponent*/);
 		if (!scene) {
 			throw std::exception(("Could not load model: " + modelName).c_str());
 		}
 		std::vector<Mesh> meshData;
-		loadMesh(meshData, scene->mRootNode, scene);
+		loadMesh(modelName, meshData, scene->mRootNode, scene);
 		meshMap.emplace(modelName, std::move(meshData));
 	}
 	return meshMap[modelName];
 }
 
-void Mesh::loadMesh(std::vector<Mesh> & meshData, aiNode * node, const aiScene * scene) {
+void Mesh::loadMesh(const std::string & modelName, std::vector<Mesh> & meshData, aiNode * node,
+					const aiScene * scene) {
 	for (unsigned i = 0; i < node->mNumMeshes; i++) {
 		auto mesh = scene->mMeshes[node->mMeshes[i]];
-		meshData.emplace_back(Mesh(mesh, scene));
+		meshData.emplace_back(Mesh(modelName, mesh, scene));
 	}
 
 	for (unsigned i = 0; i < node->mNumChildren; i++) {
-		loadMesh(meshData, node->mChildren[i], scene);
+		loadMesh(modelName, meshData, node->mChildren[i], scene);
 	}
 }
 
-Mesh::Mesh(aiMesh * mesh, const aiScene * scene) {
+Mesh::Mesh(const std::string & modelName, aiMesh * mesh, const aiScene * scene) {
 	std::vector<Vertex> vertices;
 	std::vector<GLuint> indices;
 
+	if (!mesh->HasTextureCoords(0)) {
+		throw std::exception("Mesh does not have texture coords");
+	}
+	auto material = scene->mMaterials[mesh->mMaterialIndex];
+	bool useTexture = false;
+	if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
+		useTexture = true;
+		aiString path;
+		material->GetTexture(aiTextureType_DIFFUSE, 0, &path);
+		texture = &TextureLoader::loadTexture(locationAppend(modelName, path.C_Str()));
+	}
+
 	for (unsigned i = 0; i < mesh->mNumVertices; ++i) {
+		glm::vec2 uv;
+		if (useTexture) {
+			uv = {mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y};
+		}
 		vertices.emplace_back(Vertex{
 			{mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z},
-			{mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z}});
+			{mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z},
+			uv
+		});
 	}
 	for (unsigned i = 0; i < mesh->mNumFaces; ++i) {
 		auto face = mesh->mFaces[i];
@@ -55,6 +85,7 @@ Mesh::Mesh(aiMesh * mesh, const aiScene * scene) {
 			indices.emplace_back(face.mIndices[j]);
 		}
 	}
+
 	numTriangles = indices.size();
 	vao.gen();
 	glBindVertexArray(vao);
@@ -72,12 +103,20 @@ Mesh::Mesh(aiMesh * mesh, const aiScene * scene) {
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, normal));
 	glEnableVertexAttribArray(1);
 
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, uv));
+	glEnableVertexAttribArray(2);
+
 	glBindVertexArray(0);
 }
 
 
 void Mesh::draw() const {
 	glBindVertexArray(vao);
+	if (texture) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, *texture);
+	}
 	glDrawElements(GL_TRIANGLES, numTriangles, GL_UNSIGNED_INT, 0);
+
 	glBindVertexArray(0);
 }

@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <boost/range/algorithm.hpp>
+
 #include <array>
 #include <vector>
 #include <string>
@@ -28,6 +30,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/string_cast.hpp>
 #define _USE_MATH_DEFINES
 #include <cmath>

@@ -4,7 +4,7 @@ class Renderer {
 	GLFWwindow * window;
 	static const int WindowWidth = 800, WindowHeight = 600;
 	gl::Program program;
-	GLuint viewProjectionLocation;
+	GLuint viewProjectionLocation, modelMatrixLocation;
 
 	glm::vec3 cameraPos;
 	float horizontalAngle = 0.f, verticalAngle = 0.f;

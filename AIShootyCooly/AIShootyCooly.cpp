@@ -35,15 +35,20 @@ int main() {
 		Physics::getInstance().step(dt);
 	});
 
-	Model model("models/sponza-x/sponza.obj");
-	int width, height, channels;
-	auto image = SOIL_load_image("models/sponza-x/textures/background.tga",
-								 &width,
-								 &height, 
-								 &channels, 
-								 SOIL_LOAD_RGB);
-	SOIL_free_image_data(image);
+	auto ent = em.createEntity();
+	ent.addComponent<sampleComponent1>(3);
+	ent.addComponent<sampleComponent2>("3");
+	ent.getComponent<sampleComponent1>();
+	ent.hasComponent<sampleComponent1>();
+	ent.removeComponent<sampleComponent1>();
 
+	em.getEntities<sampleComponent2, float>();
+	em.getEntities<sampleComponent1, sampleComponent2>();
+	em.getEntities<sampleComponent1, sampleComponent1>();
+
+
+	Model model("models/sponza-x/sponza.obj");
+	model.setScale(0.01, 0.01, 0.01);
 	auto oldTime = glfwGetTime();
 	while (renderer.isOpen()) {
 		auto newTime = glfwGetTime();
