@@ -52,16 +52,20 @@ struct setCreator {
 			mpl::insert<mpl::_1, mpl::_2>
 		>::type;
 };
-/*
+
 template <class Set1, class Set2>
 struct setIntersection {
 	using type =
 		typename mpl::fold<
 		Set1,
 		mpl::set0<>,
-		mpl::if_<mpl::has_key<Set2, mpl::_2>, mpl::insert<mpl::_1, mpl::_2>, mpl::_1>
+		mpl::if_<
+			mpl::has_key<Set2, mpl::_2>,
+			mpl::insert<mpl::_1, mpl::_2>,
+			mpl::_1
+		>
 		>::type;
-};*/
+};
 
 template <class Set, class Index>
 constexpr int getIndex() {
@@ -80,14 +84,14 @@ constexpr auto tupleBitset() {
 		typename mpl::fold<
 			PartialSet,
 			mpl::integral_c<unsigned long long, 0>,
-			mpl::eval_if<
-				mpl::has_key<Set, mpl::_2>,
+			//mpl::eval_if<
+				//mpl::has_key<Set, mpl::_2>,
 				mpl::plus<
 					mpl::_1, 
 					indexOffset<Set, mpl::_2>
-				>,
-				mpl::_1
-			>
+				>//,
+				//mpl::_1
+			//>
 		>::type;
 	return std::bitset<mpl::size<Set>::value>(type::value);
 }
@@ -106,6 +110,7 @@ class Entity {
 	EntityID id = EntityID(0);
 	EntityVersion version = EntityVersion(0);
 	std::bitset<Components::size> components;
+	std::bitset<Tags::size> tags;
 
 public:
 	template <class Component, typename ... T>
@@ -132,16 +137,27 @@ public:
 	void removeComponent() {
 		manager->removeComponent<Component>(*this);
 	}
+
+	template <class Tag>
+	bool hasTag() const {
+		return manager->hasTag<Tag>(*this);
+	}
+
+	template <class Tag>
+	void setTag(bool add) {
+		manager->setTag<Tag>(*this, add);
+	}
 };
 
 template<class... Ts>
 struct ComponentList {
+private:
 	template<typename T>
 	using container = std::unordered_map<EntityID, T>;
-
-	using setType = typename setCreator<Ts...>::type;
 	using myStdTuple = stdTupleCreator<container>;
-	using type = typename mpl::fold<
+public:
+	using setType = typename setCreator<Ts...>::type;
+	using tupleType = typename mpl::fold<
 		setType,
 		std::tuple<>,
 		myStdTuple::toStdTuple<mpl::_1, mpl::_2>
@@ -151,16 +167,10 @@ struct ComponentList {
 
 template<class... Ts>
 struct TagList {
-	template<typename = void>
 	using container = std::unordered_set<EntityID>;
 
 	using setType = typename setCreator<Ts...>::type;
-	using myStdTuple = stdTupleCreator<container>;
-	using type = typename mpl::fold<
-		setType,
-		std::tuple<>,
-		myStdTuple::toStdTuple<mpl::_1, mpl::_2>
-	>::type;
+
 	static constexpr auto size = mpl::size<setType>::value;
 };
 
@@ -169,14 +179,17 @@ class EntityManager {
 	using MyEntity = Entity<ComponentList, TagList>;
 	using EntityContainer = std::vector<MyEntity>;
 
-	typename ComponentList::type components;
-	std::array<typename TagList::template container<>, TagList::size> tags;
+	using ComponentSet = typename ComponentList::setType;
+	using TagSet = typename TagList::setType;
+
+	typename ComponentList::tupleType componentTuple;
+	std::array<typename TagList::container, TagList::size> tagArray;
+
 	struct EntityData { 
 		bool inUse = false;
 		MyEntity entity;
 	};
 	std::unordered_map<EntityID, EntityData> entityMap;
-
 
 	void confirmEntity(const MyEntity & entity) const {
 		if (entity.manager != this) {
@@ -197,7 +210,10 @@ class EntityManager {
 		}
 	}
 public:
-	EntityManager() {}
+	EntityManager() {
+		static_assert(mpl::size<setIntersection<ComponentSet, TagSet>::type>::value == 0,
+					  "Tags and Components intersect");
+	}
 
 	MyEntity createEntity() {
 		EntityID id(0);
@@ -223,9 +239,11 @@ public:
 
 	template <class Component, typename ... T>
 	void addComponent(MyEntity & entity, T&& ... t) {
+		static_assert(mpl::has_key<ComponentSet, Component>::value,
+					  "Component not part of ComponentSet");
 		confirmEntity(entity);
-		constexpr auto iterPos = getIndex<typename ComponentList::setType, Component>();
-		std::get<iterPos>(components).insert_or_assign(entity.id, Component(t ...));
+		constexpr auto iterPos = getIndex<ComponentSet, Component>();
+		std::get<iterPos>(componentTuple).insert_or_assign(entity.id, Component(t ...));
 		entityMap[entity.id].entity.components[iterPos] = 1;
 		entity.components[iterPos] = 1;
 	}
@@ -239,34 +257,71 @@ public:
 
 	template <class Component>
 	const Component & getComponent(const MyEntity & entity) const {
+		static_assert(mpl::has_key<ComponentSet, Component>::value,
+					  "Component not part of ComponentSet");
 		confirmEntity(entity);
-		constexpr auto iterPos = getIndex<typename ComponentList::setType, Component>();
-		return std::get<iterPos>(components).at(entity.id);
+		constexpr auto iterPos = getIndex<ComponentSet, Component>();
+		return std::get<iterPos>(componentTuple).at(entity.id);
 	}
 
 	template <class Component>
 	bool hasComponent(const MyEntity & entity) const {
+		static_assert(mpl::has_key<ComponentSet, Component>::value, "Component not part of ComponentSet");
 		confirmEntity(entity);
-		constexpr auto iterPos = getIndex<typename ComponentList::setType, Component>();
+		constexpr auto iterPos = getIndex<ComponentSet, Component>();
 		return entity.components[iterPos];
 	}
 
 	template <class Component>
 	void removeComponent(MyEntity & entity) {
+		static_assert(mpl::has_key<ComponentSet, Component>::value,
+					  "Component not part of ComponentSet");
 		confirmEntity(entity);
-		constexpr auto iterPos = getIndex<typename ComponentList::setType, Component>();
-		std::get<iterPos>(components).erase(entity.id);
+		constexpr auto iterPos = getIndex<ComponentSet, Component>();
+		std::get<iterPos>(componentTuple).erase(entity.id);
 		entityMap[entity.id].entity.components[iterPos] = 0;
 		entity.components[iterPos] = 0;
 	}
 
+	template <class Tag>
+	bool hasTag(const MyEntity & entity) const {
+		static_assert(mpl::has_key<TagSet, Tag>::value,
+					  "Tag not part of TagSet");
+		confirmEntity(entity);
+		constexpr auto iterPos = getIndex<TagSet, Tag>();
+		return tagArray[iterPos].count(entity.id) == 1;
+	}
+
+	template <class Tag>
+	void setTag(MyEntity & entity, bool add) {
+		static_assert(mpl::has_key<TagSet, Tag>::value,
+					  "Tag not part of TagSet");
+		confirmEntity(entity);
+		constexpr auto iterPos = getIndex<TagSet, Tag>();
+		if (add) {
+			tagArray[iterPos].insert(entity.id);
+		}
+		else {
+			tagArray[iterPos].erase(entity.id);
+		}
+		entityMap[entity.id].entity.tags[iterPos] = add;
+		entity.tags[iterPos] = add;
+	}
+
 	template <class ... ThingsWanted>
 	EntityContainer getEntities() {
-		using ThingSet = typename setCreator<ThingsWanted...>::type;
-		constexpr auto bitset = tupleBitset<typename ComponentList::setType, ThingSet>();
+		using ThingsWantedSet = typename setCreator<ThingsWanted...>::type;
+		using ComponentsWantedSet = setIntersection<ThingsWantedSet, ComponentSet>::type;
+		using TagsWantedSet = setIntersection<ThingsWantedSet, TagSet>::type;
+		static_assert(mpl::size<ComponentsWantedSet>::value + mpl::size<TagsWantedSet>::value
+					  == mpl::size<ThingsWantedSet>::value,
+					  "Trying to get invalid things");
+		constexpr auto componentBitset = tupleBitset<ComponentSet, ComponentsWantedSet>();
+		constexpr auto tagBitset = tupleBitset<TagSet, TagsWantedSet>();
 		EntityContainer entities;
 		for (const auto & entity : entityMap) {
-			if ((entity.second.entity.components & bitset) == bitset) {
+			if ((entity.second.entity.components & componentBitset) == componentBitset &&
+				(entity.second.entity.tags & tagBitset) == tagBitset) {
 				entities.emplace_back(entity.second.entity);
 			}
 		}

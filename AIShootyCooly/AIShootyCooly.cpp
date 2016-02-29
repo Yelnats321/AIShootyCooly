@@ -18,8 +18,12 @@ struct sampleComponent2 {
 	sampleComponent2(std::string _text): text(_text) {};
 };
 
+struct sampleTag1 {};
+struct sampleTag2 {};
+struct sampleTag3 {};
+
 using Components = ComponentList<sampleComponent1, sampleComponent2>;
-using Tags = TagList<>;
+using Tags = TagList<sampleTag1, sampleTag2, sampleTag3>;
 using MyEntityManager = EntityManager<Components, Tags>;
 
 using namespace physx;
@@ -42,9 +46,23 @@ int main() {
 	ent.hasComponent<sampleComponent1>();
 	ent.removeComponent<sampleComponent1>();
 
-	em.getEntities<sampleComponent2, float>();
-	em.getEntities<sampleComponent1, sampleComponent2>();
-	em.getEntities<sampleComponent1, sampleComponent1>();
+	std::cout<< ent.hasTag < sampleTag1>();
+	ent.setTag<sampleTag1>(false);
+	std::cout << ent.hasTag < sampleTag1>();
+	ent.setTag<sampleTag1>(true);
+	ent.setTag<sampleTag1>(true);
+	std::cout << ent.hasTag < sampleTag1>();
+	ent.setTag<sampleTag1>(false);
+	std::cout << ent.hasTag < sampleTag1>();
+	ent.setTag<sampleTag1>(true);
+	ent.setTag<sampleTag2>(true);
+
+	std::cout << em.getEntities<sampleComponent2, sampleTag1>().size();
+	std::cout << em.getEntities<sampleComponent2, sampleTag2>().size();
+	std::cout << em.getEntities<sampleTag2, sampleComponent2, sampleTag1>().size();
+	std::cout << em.getEntities<sampleComponent1, sampleComponent2>().size();
+	std::cout << em.getEntities<sampleComponent1, sampleComponent1>().size();
+	std::cout << em.getEntities<sampleTag3, sampleComponent2, sampleTag1>().size();
 
 
 	Model model("models/sponza-x/sponza.obj");
