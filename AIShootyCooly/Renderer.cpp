@@ -112,6 +112,10 @@ void Renderer::updateLocation(float dt) {
 		cameraPos_ -= glm::vec3(0, 1, 0) * dt * Speed;
 	}
 
+	if (glfwGetKey(window_, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+		glfwSetWindowShouldClose(window_, true);
+	}
+
 	cameraMatrix_ = glm::lookAt(cameraPos_,
 								cameraPos_ + direction,
 								up);
