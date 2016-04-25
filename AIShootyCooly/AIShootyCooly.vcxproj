@@ -172,6 +172,9 @@
     </ClCompile>
     <ClCompile Include="TextureLoader.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Entity.impl" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

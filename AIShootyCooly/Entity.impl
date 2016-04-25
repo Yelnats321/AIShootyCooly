@@ -1,0 +1,236 @@
+/*
+ Here lies my sanity
+*/
+
+namespace {
+template <class Set1, class Set2>
+struct setIntersection {
+	using type =
+		typename mpl::fold<
+		Set1,
+		mpl::set0<>,
+		mpl::if_<
+			mpl::has_key<Set2, mpl::_2>,
+			mpl::insert<mpl::_1, mpl::_2>,
+			mpl::_1
+		>
+		>::type;
+};
+
+template <class Set, class Index>
+constexpr int getIndex() {
+	return mpl::distance<
+			typename mpl::begin<Set>::type,
+			typename mpl::find<Set, Index>::type
+		>::type::value;
+}
+
+template <class Set, class Index>
+struct indexOffset : mpl::integral_c<unsigned long long, 1ull << getIndex<Set, Index>()> {};
+
+template <class Set, class PartialSet>
+constexpr auto tupleBitset() {
+	using type = 
+		typename mpl::fold<
+			PartialSet,
+			mpl::integral_c<unsigned long long, 0>,
+			//mpl::eval_if<
+				//mpl::has_key<Set, mpl::_2>,
+				mpl::plus<
+					mpl::_1, 
+					indexOffset<Set, mpl::_2>
+				>//,
+				//mpl::_1
+			//>
+		>::type;
+	return std::bitset<mpl::size<Set>::value>(type::value);
+}
+}
+
+
+template<class Components, class Tags>
+template<class Component, typename ... T>
+void Entity<Components, Tags>::addComponent(T&& ... t) {
+	manager_->addComponent<Component, T...>(*this, std::forward<T>(t)...);
+}
+
+template<class Components, class Tags>
+template <class Component>
+Component & Entity<Components, Tags>::getComponent() {
+	return manager_->getComponent<Component>(*this);
+}
+
+template<class Components, class Tags>
+template <class Component>
+const Component & Entity<Components, Tags>::getComponent() const {
+	return manager_->getComponent<Component>(*this);
+}
+
+template<class Components, class Tags>
+template <class Component>
+bool Entity<Components, Tags>::hasComponent() const {
+	return manager_->hasComponent<Component>(*this);
+}
+
+template<class Components, class Tags>
+template <class Component>
+void Entity<Components, Tags>::removeComponent() {
+	manager_->removeComponent<Component>(*this);
+}
+
+template<class Components, class Tags>
+template <class Tag>
+bool Entity<Components, Tags>::hasTag() const {
+	return manager_->hasTag<Tag>(*this);
+}
+
+template<class Components, class Tags>
+template <class Tag>
+void Entity<Components, Tags>::setTag(bool add) {
+	manager_->setTag<Tag>(*this, add);
+}
+
+template<class ComponentList, class TagList>
+void EntityManager<ComponentList, TagList>::confirmEntity(const MyEntity & entity) const {
+	if (entity.manager_ != this) {
+		throw std::invalid_argument("Entity does not belong to this EntityManager");
+	}
+	auto it = entityMap_.find(entity.id_);
+	if (it == entityMap_.end()) {
+		throw std::invalid_argument("Entity does not exist");
+	}
+	if (!it->second.inUse_) {
+		throw std::invalid_argument("Entity is already dead");
+	}
+	if (it->second.entity_.version_ != entity.version_) {
+		throw std::invalid_argument("Entity has invalid version");
+	}
+	if (it->second.entity_.components_ != entity.components_) {
+		throw std::invalid_argument("Entity has incorrect component bitset");
+	}
+}
+
+template<class ComponentList, class TagList>
+typename EntityManager<ComponentList, TagList>::MyEntity 
+EntityManager<ComponentList, TagList>::createEntity() {
+	EntityID id(0);
+	while (true) {
+		if (!entityMap_[id].inUse_) {
+			entityMap_[id].inUse_ = true;
+			entityMap_[id].entity_.id_ = id;
+			entityMap_[id].entity_.manager_ = this;
+			entityMap_[id].entity_.components_.reset();
+			return entityMap_[id].entity_;
+		}
+		else {
+			id++;
+		}
+	}
+}
+
+template<class ComponentList, class TagList>
+void EntityManager<ComponentList, TagList>::removeEntity(MyEntity && entity) {
+	confirmEntity(entity);
+	entityMap_[entity.id].inUse_ = false;
+	++entityMap_[entity.id].entity_.version_;
+}
+
+template<class ComponentList, class TagList>
+template <class Component, typename ... T>
+void EntityManager<ComponentList, TagList>::addComponent(MyEntity & entity, T&& ...t) {
+	static_assert(mpl::has_key<ComponentSet, Component>::value,
+				  "Component not part of ComponentSet");
+	confirmEntity(entity);
+	constexpr auto iterPos = getIndex<ComponentSet, Component>();
+	std::get<iterPos>(componentTuple_).insert_or_assign(entity.id_, Component(t...));
+	entityMap_[entity.id_].entity_.components_[iterPos] = 1;
+	entity.components_[iterPos] = 1;
+}
+
+template<class ComponentList, class TagList>
+template <class Component>
+Component & EntityManager<ComponentList, TagList>::getComponent(const MyEntity & entity) {
+	return const_cast<Component &>
+		(static_cast<const EntityManager<ComponentList, TagList> *>(this)
+		 ->getComponent<Component>(entity));
+}
+
+template<class ComponentList, class TagList>
+template <class Component>
+const Component & EntityManager<ComponentList, TagList>::getComponent(const MyEntity & entity) const {
+	static_assert(mpl::has_key<ComponentSet, Component>::value,
+				  "Component not part of ComponentSet");
+	confirmEntity(entity);
+	constexpr auto iterPos = getIndex<ComponentSet, Component>();
+	return std::get<iterPos>(componentTuple_).at(entity.id_);
+}
+
+template<class ComponentList, class TagList>
+template <class Component>
+bool EntityManager<ComponentList, TagList>::hasComponent(const MyEntity & entity) const {
+	static_assert(mpl::has_key<ComponentSet, Component>::value, "Component not part of ComponentSet");
+	confirmEntity(entity);
+	constexpr auto iterPos = getIndex<ComponentSet, Component>();
+	return entity.components_[iterPos];
+}
+
+template<class ComponentList, class TagList>
+template <class Component>
+void EntityManager<ComponentList, TagList>::removeComponent(MyEntity & entity) {
+	static_assert(mpl::has_key<ComponentSet, Component>::value,
+				  "Component not part of ComponentSet");
+	confirmEntity(entity);
+	constexpr auto iterPos = getIndex<ComponentSet, Component>();
+	std::get<iterPos>(componentTuple_).erase(entity.id_);
+	entityMap_[entity.id_].entity_.components_[iterPos] = 0;
+	entity.components_[iterPos] = 0;
+}
+
+template<class ComponentList, class TagList>
+template <class Tag>
+bool EntityManager<ComponentList, TagList>::hasTag(const MyEntity & entity) const {
+	static_assert(mpl::has_key<TagSet, Tag>::value,
+				  "Tag not part of TagSet");
+	confirmEntity(entity);
+	constexpr auto iterPos = getIndex<TagSet, Tag>();
+	return tagArray_[iterPos].count(entity.id_) == 1;
+}
+
+template<class ComponentList, class TagList>
+template <class Tag>
+void EntityManager<ComponentList, TagList>::setTag(MyEntity & entity, bool add) {
+	static_assert(mpl::has_key<TagSet, Tag>::value,
+				  "Tag not part of TagSet");
+	confirmEntity(entity);
+	constexpr auto iterPos = getIndex<TagSet, Tag>();
+	if (add) {
+		tagArray_[iterPos].insert(entity.id_);
+	}
+	else {
+		tagArray_[iterPos].erase(entity.id_);
+	}
+	entityMap_[entity.id_].entity_.tags_[iterPos] = add;
+	entity.tags_[iterPos] = add;
+}
+
+template<class ComponentList, class TagList>
+template <class ... ThingsWanted>
+typename EntityManager<ComponentList, TagList>::EntityContainer
+EntityManager<ComponentList, TagList>::getEntities() {
+	using ThingsWantedSet = typename setCreator<ThingsWanted...>::type;
+	using ComponentsWantedSet = setIntersection<ThingsWantedSet, ComponentSet>::type;
+	using TagsWantedSet = setIntersection<ThingsWantedSet, TagSet>::type;
+	static_assert(mpl::size<ComponentsWantedSet>::value + mpl::size<TagsWantedSet>::value
+				  == mpl::size<ThingsWantedSet>::value,
+				  "Trying to get invalid things");
+	constexpr auto componentBitset = tupleBitset<ComponentSet, ComponentsWantedSet>();
+	constexpr auto tagBitset = tupleBitset<TagSet, TagsWantedSet>();
+	EntityContainer entities;
+	for (const auto & entity : entityMap_) {
+		if ((entity.second.entity_.components_ & componentBitset) == componentBitset &&
+			(entity.second.entity_.tags_ & tagBitset) == tagBitset) {
+			entities.emplace_back(entity.second.entity_);
+		}
+	}
+	return entities;
+}
