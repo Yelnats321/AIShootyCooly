@@ -1,17 +1,20 @@
 #pragma once
 
 class Renderer {
-	GLFWwindow * window;
-	static const int WindowWidth = 800, WindowHeight = 600;
-	gl::Program program;
-	GLuint viewProjectionLocation, modelMatrixLocation;
+	GLFWwindow * window_;
+	static const int WindowWidth_ = 800, WindowHeight_ = 600;
+	gl::Program program_;
+	GLuint viewProjectionLocation_, modelMatrixLocation_;
 
-	glm::vec3 cameraPos;
-	float horizontalAngle = 0.f, verticalAngle = 0.f;
-	glm::mat4 cameraMatrix;
+	glm::vec3 cameraPos_;
+	float horizontalAngle_ = 0.f, verticalAngle_ = 0.f;
+	glm::mat4 cameraMatrix_;
 public:
 	Renderer();
 	~Renderer();
+
+	Renderer(const Renderer &) = delete;
+	Renderer & operator=(const Renderer &) = delete;
 
 	bool isOpen() const;
 	void updateLocation(float);

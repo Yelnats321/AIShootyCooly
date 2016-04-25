@@ -27,7 +27,7 @@ const gl::Texture & TextureLoader::loadTexture(const std::string & name) {
 
 		if (image == nullptr) {
 			std::cerr << " ***Error loading texture " + name + " due to " + SOIL_last_result() << std::endl;
-			throw std::exception("Texture load error");
+			throw std::runtime_error("Texture load error");
 		}
 		SOIL_free_image_data(image);
 

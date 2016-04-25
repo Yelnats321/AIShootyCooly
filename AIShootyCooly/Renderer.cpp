@@ -20,9 +20,9 @@ Renderer::Renderer() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-	window = glfwCreateWindow(WindowWidth, WindowHeight, "AI Shooty Cooly", nullptr, nullptr);
+	window_ = glfwCreateWindow(WindowWidth_, WindowHeight_, "AI Shooty Cooly", nullptr, nullptr);
 
-	glfwMakeContextCurrent(window);
+	glfwMakeContextCurrent(window_);
 
 	glewExperimental = GL_TRUE;
 	glewInit();
@@ -31,103 +31,103 @@ Renderer::Renderer() {
 	glDepthFunc(GL_LESS);
 
 	// Setup a sample program
-	program.gen("shaders/pass.vert", "shaders/pass.frag");
+	program_.gen("shaders/pass.vert", "shaders/pass.frag");
 
-	viewProjectionLocation = glGetUniformLocation(program, "VP");
-	modelMatrixLocation = glGetUniformLocation(program, "M");
+	viewProjectionLocation_ = glGetUniformLocation(program_, "VP");
+	modelMatrixLocation_ = glGetUniformLocation(program_, "M");
 
 	// Bind textures
-	glUniform1i(glGetUniformLocation(program, "diffuseTex"), 0);
+	glUniform1i(glGetUniformLocation(program_, "diffuseTex"), 0);
 }
 
 Renderer::~Renderer() {
-	glfwDestroyWindow(window);
+	glfwDestroyWindow(window_);
 	glfwTerminate();
 }
 
 bool Renderer::isOpen() const {
-	return !glfwWindowShouldClose(window);
+	return !glfwWindowShouldClose(window_);
 }
 
 void Renderer::updateLocation(float dt) {
 	static auto MouseSpeed = 0.12f, Speed = 10.0f;
 
 	double xpos, ypos;
-	glfwGetCursorPos(window, &xpos, &ypos);
-	xpos = WindowWidth / 2.0 - xpos;
-	ypos = WindowHeight / 2.0 - ypos;
-	glfwSetCursorPos(window, WindowWidth / 2.0, WindowHeight / 2.0);
+	glfwGetCursorPos(window_, &xpos, &ypos);
+	xpos = WindowWidth_ / 2.0 - xpos;
+	ypos = WindowHeight_ / 2.0 - ypos;
+	glfwSetCursorPos(window_, WindowWidth_ / 2.0, WindowHeight_ / 2.0);
 
-	horizontalAngle += MouseSpeed * dt * float(xpos);
-	verticalAngle += MouseSpeed * dt * float(ypos);
-	if (verticalAngle < -M_PI / 2)
-		verticalAngle = -float(M_PI) / 2;
+	horizontalAngle_ += MouseSpeed * dt * float(xpos);
+	verticalAngle_ += MouseSpeed * dt * float(ypos);
+	if (verticalAngle_ < -M_PI / 2)
+		verticalAngle_ = -float(M_PI) / 2;
 
-	else if (verticalAngle > M_PI / 2)
-		verticalAngle = float(M_PI) / 2;
+	else if (verticalAngle_ > M_PI / 2)
+		verticalAngle_ = float(M_PI) / 2;
 
-	if (horizontalAngle < 0 || horizontalAngle > 2 * M_PI) {
-		horizontalAngle = fmodf(horizontalAngle, 2 * float(M_PI));
+	if (horizontalAngle_ < 0 || horizontalAngle_ > 2 * M_PI) {
+		horizontalAngle_ = fmod(horizontalAngle_, 2 * float(M_PI));
 	}
 
 	glm::vec3 direction(
-		cos(verticalAngle) * sin(horizontalAngle),
-		sin(verticalAngle),
-		cos(verticalAngle) * cos(horizontalAngle)
+		cos(verticalAngle_) * sin(horizontalAngle_),
+		sin(verticalAngle_),
+		cos(verticalAngle_) * cos(horizontalAngle_)
 		);
 	glm::vec3 right = glm::vec3(
-		sin(horizontalAngle - M_PI / 2.0f),
+		sin(horizontalAngle_ - M_PI / 2.0f),
 		0,
-		cos(horizontalAngle - M_PI / 2.0f)
+		cos(horizontalAngle_ - M_PI / 2.0f)
 		);
 	glm::vec3 forward = glm::vec3(
-		sin(horizontalAngle),
+		sin(horizontalAngle_),
 		0,
-		cos(horizontalAngle)
+		cos(horizontalAngle_)
 		);
 
 	glm::vec3 up = glm::cross(right, direction);
 	// Move forward
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		cameraPos += forward * dt * Speed;
+	if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS) {
+		cameraPos_ += forward * dt * Speed;
 	}
 	// Move backward
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		cameraPos -= forward * dt * Speed;
+	if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS) {
+		cameraPos_ -= forward * dt * Speed;
 	}
 	// Strafe right
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		cameraPos += right * dt * Speed;
+	if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS) {
+		cameraPos_ += right * dt * Speed;
 	}
 	// Strafe left
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		cameraPos -= right * dt * Speed;
+	if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS) {
+		cameraPos_ -= right * dt * Speed;
 	}
 	// Float up
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-		cameraPos += glm::vec3(0, 1, 0) * dt * Speed;
+	if (glfwGetKey(window_, GLFW_KEY_Q) == GLFW_PRESS) {
+		cameraPos_ += glm::vec3(0, 1, 0) * dt * Speed;
 	}
 	// Float down
-	if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
-		cameraPos -= glm::vec3(0, 1, 0) * dt * Speed;
+	if (glfwGetKey(window_, GLFW_KEY_Z) == GLFW_PRESS) {
+		cameraPos_ -= glm::vec3(0, 1, 0) * dt * Speed;
 	}
 
-	cameraMatrix = glm::lookAt(cameraPos,
-							   cameraPos + direction,
-							   up);
+	cameraMatrix_ = glm::lookAt(cameraPos_,
+								cameraPos_ + direction,
+								up);
 }
 
 void Renderer::draw(const Model & model) {
-	static auto projection = glm::perspective<float>(toRad(50), float(WindowWidth) / WindowHeight,
+	static auto projection = glm::perspective<float>(toRad(50), float(WindowWidth_) / WindowHeight_,
 													 0.1f, 50);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glUseProgram(program);
-	glUniformMatrix4fv(viewProjectionLocation, 1, GL_FALSE, glm::value_ptr(projection * cameraMatrix));
-	glViewport(0, 0, WindowWidth, WindowHeight);
+	glUseProgram(program_);
+	glUniformMatrix4fv(viewProjectionLocation_, 1, GL_FALSE, glm::value_ptr(projection * cameraMatrix_));
+	glViewport(0, 0, WindowWidth_, WindowHeight_);
 
-	model.draw(modelMatrixLocation);
+	model.draw(modelMatrixLocation_);
 
-	glfwSwapBuffers(window);
+	glfwSwapBuffers(window_);
 	glfwPollEvents();
 }

@@ -106,46 +106,46 @@ class Entity {
 
 	friend class Manager;
 
-	Manager * manager = nullptr;
-	EntityID id = EntityID(0);
-	EntityVersion version = EntityVersion(0);
-	std::bitset<Components::size> components;
-	std::bitset<Tags::size> tags;
+	Manager * manager_ = nullptr;
+	EntityID id_ = EntityID(0);
+	EntityVersion version_ = EntityVersion(0);
+	std::bitset<Components::size> components_;
+	std::bitset<Tags::size> tags_;
 
 public:
 	template <class Component, typename ... T>
 	void addComponent(T&& ... t) {
-		manager->addComponent<Component, T...>(*this, std::forward<T>(t)...);
+		manager_->addComponent<Component, T...>(*this, std::forward<T>(t)...);
 	}
 
 	template <class Component>
 	Component & getComponent() {
-		return manager->getComponent<Component>(*this);
+		return manager_->getComponent<Component>(*this);
 	}
 
 	template <class Component>
 	const Component & getComponent() const {
-		return manager->getComponent<Component>(*this);
+		return manager_->getComponent<Component>(*this);
 	}
 
 	template <class Component>
 	bool hasComponent() const {
-		return manager->hasComponent<Component>(*this);
+		return manager_->hasComponent<Component>(*this);
 	}
 
 	template <class Component>
 	void removeComponent() {
-		manager->removeComponent<Component>(*this);
+		manager_->removeComponent<Component>(*this);
 	}
 
 	template <class Tag>
 	bool hasTag() const {
-		return manager->hasTag<Tag>(*this);
+		return manager_->hasTag<Tag>(*this);
 	}
 
 	template <class Tag>
 	void setTag(bool add) {
-		manager->setTag<Tag>(*this, add);
+		manager_->setTag<Tag>(*this, add);
 	}
 };
 
@@ -182,30 +182,30 @@ class EntityManager {
 	using ComponentSet = typename ComponentList::setType;
 	using TagSet = typename TagList::setType;
 
-	typename ComponentList::tupleType componentTuple;
-	std::array<typename TagList::container, TagList::size> tagArray;
+	typename ComponentList::tupleType componentTuple_;
+	std::array<typename TagList::container, TagList::size> tagArray_;
 
 	struct EntityData { 
-		bool inUse = false;
-		MyEntity entity;
+		bool inUse_ = false;
+		MyEntity entity_;
 	};
-	std::unordered_map<EntityID, EntityData> entityMap;
+	std::unordered_map<EntityID, EntityData> entityMap_;
 
 	void confirmEntity(const MyEntity & entity) const {
-		if (entity.manager != this) {
+		if (entity.manager_ != this) {
 			throw std::invalid_argument("Entity does not belong to this EntityManager");
 		}
-		auto it = entityMap.find(entity.id);
-		if (it == entityMap.end()) {
+		auto it = entityMap_.find(entity.id_);
+		if (it == entityMap_.end()) {
 			throw std::invalid_argument("Entity does not exist");
 		}
-		if (!it->second.inUse) {
+		if (!it->second.inUse_) {
 			throw std::invalid_argument("Entity is already dead");
 		}
-		if (it->second.entity.version != entity.version) {
+		if (it->second.entity_.version_ != entity.version_) {
 			throw std::invalid_argument("Entity has invalid version");
 		}
-		if (it->second.entity.components != entity.components) {
+		if (it->second.entity_.components_ != entity.components_) {
 			throw std::invalid_argument("Entity has incorrect component bitset");
 		}
 	}
@@ -218,12 +218,12 @@ public:
 	MyEntity createEntity() {
 		EntityID id(0);
 		while (true) {
-			if (!entityMap[id].inUse) {
-				entityMap[id].inUse = true;
-				entityMap[id].entity.id = id;
-				entityMap[id].entity.manager = this;
-				entityMap[id].entity.components.reset();
-				return entityMap[id].entity;
+			if (!entityMap_[id].inUse_) {
+				entityMap_[id].inUse_ = true;
+				entityMap_[id].entity_.id_ = id;
+				entityMap_[id].entity_.manager_ = this;
+				entityMap_[id].entity_.components_.reset();
+				return entityMap_[id].entity_;
 			}
 			else {
 				id++;
@@ -233,19 +233,19 @@ public:
 
 	void removeEntity(MyEntity && entity) {
 		confirmEntity(entity);
-		entityMap[entity.id].inUse = false;
-		++entityMap[entity.id].entity.version;
+		entityMap_[entity.id].inUse_ = false;
+		++entityMap_[entity.id].entity_.version_;
 	}
 
 	template <class Component, typename ... T>
-	void addComponent(MyEntity & entity, T&& ... t) {
+	void addComponent(MyEntity & entity, T&& ...t) {
 		static_assert(mpl::has_key<ComponentSet, Component>::value,
 					  "Component not part of ComponentSet");
 		confirmEntity(entity);
 		constexpr auto iterPos = getIndex<ComponentSet, Component>();
-		std::get<iterPos>(componentTuple).insert_or_assign(entity.id, Component(t ...));
-		entityMap[entity.id].entity.components[iterPos] = 1;
-		entity.components[iterPos] = 1;
+		std::get<iterPos>(componentTuple_).insert_or_assign(entity.id_, Component(t...));
+		entityMap_[entity.id_].entity_.components_[iterPos] = 1;
+		entity.components_[iterPos] = 1;
 	}
 
 	template <class Component>
@@ -261,7 +261,7 @@ public:
 					  "Component not part of ComponentSet");
 		confirmEntity(entity);
 		constexpr auto iterPos = getIndex<ComponentSet, Component>();
-		return std::get<iterPos>(componentTuple).at(entity.id);
+		return std::get<iterPos>(componentTuple_).at(entity.id_);
 	}
 
 	template <class Component>
@@ -269,7 +269,7 @@ public:
 		static_assert(mpl::has_key<ComponentSet, Component>::value, "Component not part of ComponentSet");
 		confirmEntity(entity);
 		constexpr auto iterPos = getIndex<ComponentSet, Component>();
-		return entity.components[iterPos];
+		return entity.components_[iterPos];
 	}
 
 	template <class Component>
@@ -278,9 +278,9 @@ public:
 					  "Component not part of ComponentSet");
 		confirmEntity(entity);
 		constexpr auto iterPos = getIndex<ComponentSet, Component>();
-		std::get<iterPos>(componentTuple).erase(entity.id);
-		entityMap[entity.id].entity.components[iterPos] = 0;
-		entity.components[iterPos] = 0;
+		std::get<iterPos>(componentTuple_).erase(entity.id_);
+		entityMap_[entity.id_].entity_.components_[iterPos] = 0;
+		entity.components_[iterPos] = 0;
 	}
 
 	template <class Tag>
@@ -289,7 +289,7 @@ public:
 					  "Tag not part of TagSet");
 		confirmEntity(entity);
 		constexpr auto iterPos = getIndex<TagSet, Tag>();
-		return tagArray[iterPos].count(entity.id) == 1;
+		return tagArray_[iterPos].count(entity.id_) == 1;
 	}
 
 	template <class Tag>
@@ -299,13 +299,13 @@ public:
 		confirmEntity(entity);
 		constexpr auto iterPos = getIndex<TagSet, Tag>();
 		if (add) {
-			tagArray[iterPos].insert(entity.id);
+			tagArray_[iterPos].insert(entity.id_);
 		}
 		else {
-			tagArray[iterPos].erase(entity.id);
+			tagArray_[iterPos].erase(entity.id_);
 		}
-		entityMap[entity.id].entity.tags[iterPos] = add;
-		entity.tags[iterPos] = add;
+		entityMap_[entity.id_].entity_.tags_[iterPos] = add;
+		entity.tags_[iterPos] = add;
 	}
 
 	template <class ... ThingsWanted>
@@ -319,10 +319,10 @@ public:
 		constexpr auto componentBitset = tupleBitset<ComponentSet, ComponentsWantedSet>();
 		constexpr auto tagBitset = tupleBitset<TagSet, TagsWantedSet>();
 		EntityContainer entities;
-		for (const auto & entity : entityMap) {
-			if ((entity.second.entity.components & componentBitset) == componentBitset &&
-				(entity.second.entity.tags & tagBitset) == tagBitset) {
-				entities.emplace_back(entity.second.entity);
+		for (const auto & entity : entityMap_) {
+			if ((entity.second.entity_.components_ & componentBitset) == componentBitset &&
+				(entity.second.entity_.tags_ & tagBitset) == tagBitset) {
+				entities.emplace_back(entity.second.entity_);
 			}
 		}
 		return entities;

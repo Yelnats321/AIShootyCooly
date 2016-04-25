@@ -3,11 +3,11 @@
 using namespace physx;
 
 class Physics {
-	static const int nbThreads = 4;
-	PxFoundation * foundation;
-	PxPhysics * physics;
-	PxScene * scene;
-	PxCpuDispatcher * cpuDispatcher;
+	static const int NbThreads_ = 4;
+	PxFoundation * foundation_;
+	PxPhysics * physics_;
+	PxScene * scene_;
+	PxCpuDispatcher * cpuDispatcher_;
 	Physics();
 public:
 	~Physics();

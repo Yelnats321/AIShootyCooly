@@ -3,10 +3,10 @@
 class Mesh;
 
 class Model {
-	const std::vector<Mesh> * mesh;
-	glm::mat4 modelMatrix;
-	glm::vec3 scale, position, posOrigin;
-	glm::quat rotation, rotOrigin;
+	const std::vector<Mesh> * mesh_;
+	glm::mat4 modelMatrix_;
+	glm::vec3 scale_, position_, posOrigin_;
+	glm::quat rotation_, rotOrigin_;
 	void change();
 public:
 	Model(const std::string &);

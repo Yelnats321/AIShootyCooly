@@ -3,26 +3,26 @@
 #include "Mesh.h"
 
 Model::Model(const std::string & meshName) {
-	mesh = &Mesh::loadModel(meshName);
+	mesh_ = &Mesh::loadModel(meshName);
 }
 
 void Model::draw(GLuint modelMatrixUniform) const {
-	glUniformMatrix4fv(modelMatrixUniform, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-	for (auto && i : *mesh) {
+	glUniformMatrix4fv(modelMatrixUniform, 1, GL_FALSE, glm::value_ptr(modelMatrix_));
+	for (auto && i : *mesh_) {
 		i.draw();
 	}
 }
 
 void Model::change() {
-	modelMatrix = glm::mat4(1.0);
-	modelMatrix = glm::translate(modelMatrix, position);
-	modelMatrix *= glm::mat4_cast(rotation * rotOrigin);
-	modelMatrix = glm::scale(modelMatrix, scale);
-	modelMatrix = glm::translate(modelMatrix, -posOrigin);
+	modelMatrix_ = glm::mat4(1.0);
+	modelMatrix_ = glm::translate(modelMatrix_, position_);
+	modelMatrix_ *= glm::mat4_cast(rotation_ * rotOrigin_);
+	modelMatrix_ = glm::scale(modelMatrix_, scale_);
+	modelMatrix_ = glm::translate(modelMatrix_, -posOrigin_);
 }
 
 void Model::setRotation(glm::vec3 & rot) {
-	rotation = glm::quat(rot);
+	rotation_ = glm::quat(rot);
 	change();
 }
 void Model::setRotation(float x, float y, float z) {
@@ -30,7 +30,7 @@ void Model::setRotation(float x, float y, float z) {
 }
 
 void Model::setScale(glm::vec3 & _scale) {
-	scale = _scale;
+	scale_ = _scale;
 	change();
 }
 void Model::setScale(float x, float y, float z) {
@@ -38,7 +38,7 @@ void Model::setScale(float x, float y, float z) {
 }
 
 void Model::setPosition(glm::vec3 & pos) {
-	position = pos;
+	position_ = pos;
 	change();
 }
 void Model::setPosition(float x, float y, float z) {

@@ -66,7 +66,7 @@ int main() {
 
 
 	Model model("models/sponza-x/sponza.obj");
-	model.setScale(0.01, 0.01, 0.01);
+	model.setScale(0.01f, 0.01f, 0.01f);
 	auto oldTime = glfwGetTime();
 	while (renderer.isOpen()) {
 		auto newTime = glfwGetTime();

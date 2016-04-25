@@ -15,6 +15,7 @@ auto locationAppend(std::string origin, const std::string & file) {
 	if (lastOf != std::string::npos) {
 		return origin.substr(0, lastOf + 1) + file;
 	}
+	throw std::runtime_error("Trying to append a location to a file without a valid origin: " + origin + " file: " + file);
 }
 }
 
@@ -31,7 +32,7 @@ const std::vector<Mesh> & Mesh::loadModel(const std::string & modelName) {
 									   aiProcess_FlipUVs/* |
 									   aiProcess_RemoveComponent*/);
 		if (!scene) {
-			throw std::exception(("Could not load model: " + modelName).c_str());
+			throw std::runtime_error("Could not load model: " + modelName);
 		}
 		std::vector<Mesh> meshData;
 		loadMesh(modelName, meshData, scene->mRootNode, scene);
@@ -57,7 +58,7 @@ Mesh::Mesh(const std::string & modelName, aiMesh * mesh, const aiScene * scene) 
 	std::vector<GLuint> indices;
 
 	if (!mesh->HasTextureCoords(0)) {
-		throw std::exception("Mesh does not have texture coords");
+		throw std::runtime_error("Mesh does not have texture coords");
 	}
 	auto material = scene->mMaterials[mesh->mMaterialIndex];
 	bool useTexture = false;
@@ -65,7 +66,8 @@ Mesh::Mesh(const std::string & modelName, aiMesh * mesh, const aiScene * scene) 
 		useTexture = true;
 		aiString path;
 		material->GetTexture(aiTextureType_DIFFUSE, 0, &path);
-		texture = &TextureLoader::loadTexture(locationAppend(modelName, path.C_Str()));
+		// TODO: Passing a const char * instead of a std::string
+		texture_ = &TextureLoader::loadTexture(locationAppend(modelName, path.C_Str()));
 	}
 
 	for (unsigned i = 0; i < mesh->mNumVertices; ++i) {
@@ -86,15 +88,15 @@ Mesh::Mesh(const std::string & modelName, aiMesh * mesh, const aiScene * scene) 
 		}
 	}
 
-	numTriangles = indices.size();
-	vao.gen();
-	glBindVertexArray(vao);
+	numTriangles_ = indices.size();
+	vao_.gen();
+	glBindVertexArray(vao_);
 
-	vbo.gen();
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	vbo_.gen();
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-	ebo.gen();
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	ebo_.gen();
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
@@ -111,12 +113,12 @@ Mesh::Mesh(const std::string & modelName, aiMesh * mesh, const aiScene * scene) 
 
 
 void Mesh::draw() const {
-	glBindVertexArray(vao);
-	if (texture) {
+	glBindVertexArray(vao_);
+	if (texture_) {
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, *texture);
+		glBindTexture(GL_TEXTURE_2D, *texture_);
 	}
-	glDrawElements(GL_TRIANGLES, numTriangles, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, numTriangles_, GL_UNSIGNED_INT, 0);
 
 	glBindVertexArray(0);
 }
