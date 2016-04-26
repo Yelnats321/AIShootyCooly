@@ -90,6 +90,15 @@ void Entity<Components, Tags>::setTag(bool add) {
 	manager_->setTag<Tag>(*this, add);
 }
 
+template<class Components, class Tags>
+bool Entity<Components, Tags>::operator==(const Entity & other) const {
+	return manager_ == other.manager_
+		&& id_ == other.id_
+		&& version_ == other.version_
+		&& components_ == other.components_
+		&& tags_ == other.tags_;
+}
+
 template<class ComponentList, class TagList>
 void EntityManager<ComponentList, TagList>::confirmEntity(const MyEntity & entity) const {
 	if (entity.manager_ != this) {

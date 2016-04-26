@@ -83,6 +83,8 @@ public:
 	bool hasTag() const;
 	template <class Tag>
 	void setTag(bool add);
+
+	bool operator==(const Entity &) const;
 };
 
 template<class... Ts>
