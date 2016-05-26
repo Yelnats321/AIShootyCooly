@@ -2,6 +2,7 @@
 #include "Entity.h"
 #include <string>
 
+namespace {
 struct ComponentTest1 {
 	int x_;
 };
@@ -26,10 +27,12 @@ public:
 	int add(int x) {
 		curr_ += x;
 		adjust();
+		return curr_;
 	}
 	int sub(int x) {
 		curr_ -= x;
 		adjust();
+		return curr_;
 	}
 	int get() const {
 		return curr_;
@@ -39,6 +42,7 @@ public:
 struct TagTest1 {};
 struct TagTest2 {};
 struct TagTest3 {};
+}
 
 TEST(Entity, Components) {
 	EntityManager<ComponentList<ComponentTest1>, TagList<>> entManager;

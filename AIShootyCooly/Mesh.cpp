@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "Mesh.h"
-#include "TextureLoader.h"
 
 namespace {
 struct Vertex {
@@ -54,6 +53,7 @@ void Mesh::loadMesh(const std::string & modelName, std::vector<Mesh> & meshData,
 }
 
 Mesh::Mesh(const std::string & modelName, aiMesh * mesh, const aiScene * scene) {
+	static gl::TextureManager manager;
 	std::vector<Vertex> vertices;
 	std::vector<GLuint> indices;
 
@@ -67,7 +67,7 @@ Mesh::Mesh(const std::string & modelName, aiMesh * mesh, const aiScene * scene) 
 		aiString path;
 		material->GetTexture(aiTextureType_DIFFUSE, 0, &path);
 		// TODO: Passing a const char * instead of a std::string
-		texture_ = &TextureLoader::loadTexture(locationAppend(modelName, path.C_Str()));
+		texture_ = &manager.loadTexture(locationAppend(modelName, path.C_Str()));
 	}
 
 	for (unsigned i = 0; i < mesh->mNumVertices; ++i) {

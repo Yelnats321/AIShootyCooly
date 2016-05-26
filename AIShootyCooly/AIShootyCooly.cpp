@@ -4,6 +4,7 @@
 #include "System.h"
 #include "Physics.h"
 #include "Model.h"
+#include "Event.h"
 
 #include <vld.h>
 
@@ -13,8 +14,13 @@ using MyEntityManager = EntityManager<Components, Tags>;
 
 using namespace physx;
 
+
 int main(int argc, char ** argv) {
 	::testing::InitGoogleTest(&argc, argv);
+	if (RUN_ALL_TESTS() != 0) {
+		std::cin.get();
+	}
+	EventManager<EventList<>> ev;
 	Renderer renderer;
 	Physics::getInstance();
 
@@ -37,5 +43,5 @@ int main(int argc, char ** argv) {
 		renderer.draw(model);
 	}
 
-	return RUN_ALL_TESTS();
+	return 0;
 }

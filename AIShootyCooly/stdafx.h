@@ -20,6 +20,8 @@
 #include <GLFW/glfw3.h>
 
 #include <OGLWrapper.h>
+#include <Model.h>
+#include <TextureManager.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>

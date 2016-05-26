@@ -28,13 +28,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v140_clang_3_7</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v140_clang_3_7</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -71,27 +71,28 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>E:\googletest-master\googletest\include;E:\Simple OpenGL Image Library\src;E:\glm-0.9.7.0;E:\boost_1_59_0;E:\glfw-3.1.2\include;E:\glew-1.13.0\include;E:\Programs\common\common;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Include;E:\assimp-3.2\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\googletest-master\googletest\Debug;E:\Simple OpenGL Image Library\lib;E:\assimp-3.2\lib\RelWithDebInfo;E:\glfw-3.1.2\src\RelWithDebInfo;E:\glew-1.13.0\lib\Release\Win32;E:\Programs\common\lib;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Lib\vc14win32;$(LibraryPath)</LibraryPath>
+    <IncludePath>E:\callable_traits\include;E:\googletest-master\googletest\include;E:\Simple OpenGL Image Library\src;E:\glm-0.9.7.0;E:\boost_1_59_0;E:\glfw-3.1.2\include;E:\glew-1.13.0\include;E:\Programs\common\common;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Include;E:\assimp-3.2\include;$(IncludePath)</IncludePath>
+    <LibraryPath>E:\googletest-master\googletest\Debug;E:\Simple OpenGL Image Library\lib;E:\assimp-3.2\lib\RelWithDebInfo;E:\glfw-3.1.2\src\RelWithDebInfo;E:\glew-1.13.0\lib\Release\Win32;E:\Programs\common\debug;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Lib\vc14win32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>E:\googletest-master\googletest\include;E:\Simple OpenGL Image Library\src;E:\glm-0.9.7.0;E:\boost_1_59_0;E:\glfw-3.1.2\include;E:\glew-1.13.0\include;E:\Programs\common\common;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Include;E:\assimp-3.2\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\googletest-master\googletest\Debug;E:\Simple OpenGL Image Library\lib;E:\assimp-3.2\lib\RelWithDebInfo;E:\glfw-3.1.2\src\RelWithDebInfo;E:\glew-1.13.0\lib\Release\Win32;E:\Programs\common\lib;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Lib\vc14win32;$(LibraryPath)</LibraryPath>
+    <IncludePath>E:\callable_traits\include;E:\googletest-master\googletest\include;E:\Simple OpenGL Image Library\src;E:\glm-0.9.7.0;E:\boost_1_59_0;E:\glfw-3.1.2\include;E:\glew-1.13.0\include;E:\Programs\common\common;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Include;E:\assimp-3.2\include;$(IncludePath)</IncludePath>
+    <LibraryPath>E:\googletest-master\googletest\Debug;E:\Simple OpenGL Image Library\lib;E:\assimp-3.2\lib\RelWithDebInfo;E:\glfw-3.1.2\src\RelWithDebInfo;E:\glew-1.13.0\lib\Release\Win32;E:\Programs\common\release;E:\PhysX-3.3-3.3.4-1.3.4\PhysXSDK\Lib\vc14win32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -114,11 +115,12 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -149,17 +151,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Entity.h" />
+    <ClInclude Include="Event.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="MplUtil.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="System.h" />
-    <ClInclude Include="TextureLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AIShootyCooly.cpp" />
     <ClCompile Include="EntityTest.cpp" />
+    <ClCompile Include="FunctorRegistrationTest.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="Physics.cpp" />
@@ -170,10 +174,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="TextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Entity.impl" />
+    <None Include="Event.impl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

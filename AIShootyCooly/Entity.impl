@@ -51,43 +51,43 @@ constexpr auto tupleBitset() {
 template<class Components, class Tags>
 template<class Component, typename ... T>
 void Entity<Components, Tags>::addComponent(T&& ... t) {
-	manager_->addComponent<Component, T...>(*this, std::forward<T>(t)...);
+	manager_->template addComponent<Component, T...>(*this, std::forward<T>(t)...);
 }
 
 template<class Components, class Tags>
 template <class Component>
 Component & Entity<Components, Tags>::getComponent() {
-	return manager_->getComponent<Component>(*this);
+	return manager_->template getComponent<Component>(*this);
 }
 
 template<class Components, class Tags>
 template <class Component>
 const Component & Entity<Components, Tags>::getComponent() const {
-	return manager_->getComponent<Component>(*this);
+	return manager_->template getComponent<Component>(*this);
 }
 
 template<class Components, class Tags>
 template <class Component>
 bool Entity<Components, Tags>::hasComponent() const {
-	return manager_->hasComponent<Component>(*this);
+	return manager_->template hasComponent<Component>(*this);
 }
 
 template<class Components, class Tags>
 template <class Component>
 void Entity<Components, Tags>::removeComponent() {
-	manager_->removeComponent<Component>(*this);
+	manager_->template removeComponent<Component>(*this);
 }
 
 template<class Components, class Tags>
 template <class Tag>
 bool Entity<Components, Tags>::hasTag() const {
-	return manager_->hasTag<Tag>(*this);
+	return manager_->template hasTag<Tag>(*this);
 }
 
 template<class Components, class Tags>
 template <class Tag>
 void Entity<Components, Tags>::setTag(bool add) {
-	manager_->setTag<Tag>(*this, add);
+	manager_->template setTag<Tag>(*this, add);
 }
 
 template<class Components, class Tags>
@@ -227,8 +227,8 @@ template <class ... ThingsWanted>
 typename EntityManager<ComponentList, TagList>::EntityContainer
 EntityManager<ComponentList, TagList>::getEntities() {
 	using ThingsWantedSet = typename setCreator<ThingsWanted...>::type;
-	using ComponentsWantedSet = setIntersection<ThingsWantedSet, ComponentSet>::type;
-	using TagsWantedSet = setIntersection<ThingsWantedSet, TagSet>::type;
+	using ComponentsWantedSet = typename setIntersection<ThingsWantedSet, ComponentSet>::type;
+	using TagsWantedSet = typename setIntersection<ThingsWantedSet, TagSet>::type;
 	static_assert(mpl::size<ComponentsWantedSet>::value + mpl::size<TagsWantedSet>::value
 				  == mpl::size<ThingsWantedSet>::value,
 				  "Trying to get invalid things");

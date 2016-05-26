@@ -1,12 +1,11 @@
 #pragma once
 
+#include "MplUtil.h"
+
 #include <type_traits>
 #include <bitset>
 #include <boost/serialization/strong_typedef.hpp>
-#include <boost/mpl/set.hpp>
-#include <boost/mpl/vector.hpp>
 #include <boost/mpl/size.hpp>
-#include <boost/mpl/fold.hpp>
 #include <boost/mpl/find.hpp>
 #include <boost/mpl/distance.hpp>
 #include <boost/mpl/begin.hpp>
@@ -29,31 +28,6 @@ template <> struct hash<EntityID> {
 };
 }
 
-namespace {
-namespace mpl = boost::mpl;
-
-template <template <typename> class Container>
-struct stdTupleCreator {
-	template <class T, class R>
-	struct toStdTuple;
-
-	template <class... TTypes, class X>
-	struct toStdTuple<std::tuple<TTypes...>, X> {
-		using type = std::tuple<TTypes..., Container<X>>;
-	};
-};
-
-template <class... Ts>
-struct setCreator {
-	using type =
-		typename mpl::fold<
-			mpl::vector<Ts...>,
-			mpl::set0<>,
-			mpl::insert<mpl::_1, mpl::_2>
-		>::type;
-};
-}
-
 template <class, class>
 class EntityManager;
 
@@ -61,7 +35,7 @@ template<class Components, class Tags>
 class Entity {
 	using Manager = EntityManager<Components, Tags>;
 
-	friend class Manager;
+	friend Manager;
 
 	Manager * manager_ = nullptr;
 	EntityID id_ = EntityID(0);
@@ -98,7 +72,7 @@ public:
 	using tupleType = typename mpl::fold<
 		setType,
 		std::tuple<>,
-		myStdTuple::toStdTuple<mpl::_1, mpl::_2>
+		typename myStdTuple::template toStdTuple<mpl::_1, mpl::_2>
 	>::type;
 	static constexpr auto size = mpl::size<setType>::value;
 };
@@ -132,7 +106,8 @@ class EntityManager {
 	void confirmEntity(const MyEntity & entity) const;
 public:
 	EntityManager() {
-		static_assert(mpl::size<setIntersection<ComponentSet, TagSet>::type>::value == 0,
+		// TODO: check if the ComponentList and TagList are of the proper type
+		static_assert(mpl::size<typename setIntersection<ComponentSet, TagSet>::type>::value == 0,
 					  "Tags and Components intersect");
 	}
 

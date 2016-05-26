@@ -73,18 +73,17 @@ void Renderer::updateLocation(float dt) {
 	glm::vec3 direction(
 		cos(verticalAngle_) * sin(horizontalAngle_),
 		sin(verticalAngle_),
-		cos(verticalAngle_) * cos(horizontalAngle_)
-		);
+		cos(verticalAngle_) * cos(horizontalAngle_));
+
 	glm::vec3 right = glm::vec3(
 		sin(horizontalAngle_ - M_PI / 2.0f),
 		0,
-		cos(horizontalAngle_ - M_PI / 2.0f)
-		);
+		cos(horizontalAngle_ - M_PI / 2.0f));
+
 	glm::vec3 forward = glm::vec3(
 		sin(horizontalAngle_),
 		0,
-		cos(horizontalAngle_)
-		);
+		cos(horizontalAngle_));
 
 	glm::vec3 up = glm::cross(right, direction);
 	// Move forward

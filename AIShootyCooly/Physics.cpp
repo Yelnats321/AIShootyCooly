@@ -24,7 +24,7 @@ Physics::Physics() {
 	sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
 
 	if (!sceneDesc.cpuDispatcher) {
-		cpuDispatcher_ = PxDefaultCpuDispatcherCreate(NbThreads_);
+		cpuDispatcher_ = PxDefaultCpuDispatcherCreate(NumThreads_);
 		if (!cpuDispatcher_)
 			throw std::runtime_error("PxDefaultCpuDispatcherCreate failed!");
 		sceneDesc.cpuDispatcher = cpuDispatcher_;

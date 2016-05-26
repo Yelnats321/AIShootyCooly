@@ -3,7 +3,7 @@
 using namespace physx;
 
 class Physics {
-	static const int NbThreads_ = 4;
+	static const int NumThreads_ = 4;
 	PxFoundation * foundation_;
 	PxPhysics * physics_;
 	PxScene * scene_;
