@@ -74,6 +74,9 @@
     <ClCompile Include="FunctorRegistrationTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="TypeListTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Entity.impl">

@@ -198,20 +198,15 @@ void EntityManager<ComponentList, TagList>::removeComponent(MyEntity & entity) {
 template<class ComponentList, class TagList>
 template <class Tag>
 bool EntityManager<ComponentList, TagList>::hasTag(const MyEntity & entity) const {
-	static_assert(mpl::has_key<TagSet, Tag>::value,
-				  "Tag not part of TagSet");
 	confirmEntity(entity);
-	constexpr auto iterPos = getIndex<TagSet, Tag>();
-	return tagArray_[iterPos].count(entity.id_) == 1;
+	return tagArray_[TagSet[hana::type_c<Tag>]].count(entity.id_) == 1;
 }
 
 template<class ComponentList, class TagList>
 template <class Tag>
 void EntityManager<ComponentList, TagList>::setTag(MyEntity & entity, bool add) {
-	static_assert(mpl::has_key<TagSet, Tag>::value,
-				  "Tag not part of TagSet");
 	confirmEntity(entity);
-	constexpr auto iterPos = getIndex<TagSet, Tag>();
+	constexpr auto iterPos = TagSet[hana::type_c<Tag>];
 	if (add) {
 		tagArray_[iterPos].insert(entity.id_);
 	}
@@ -226,7 +221,7 @@ template<class ComponentList, class TagList>
 template <class ... ThingsWanted>
 typename EntityManager<ComponentList, TagList>::EntityContainer
 EntityManager<ComponentList, TagList>::getEntities() {
-	using ThingsWantedSet = typename setCreator<ThingsWanted...>::type;
+	/*using ThingsWantedSet = typename setCreator<ThingsWanted...>::type;
 	using ComponentsWantedSet = typename setIntersection<ThingsWantedSet, ComponentSet>::type;
 	using TagsWantedSet = typename setIntersection<ThingsWantedSet, TagSet>::type;
 	static_assert(mpl::size<ComponentsWantedSet>::value + mpl::size<TagsWantedSet>::value
@@ -241,5 +236,5 @@ EntityManager<ComponentList, TagList>::getEntities() {
 			entities.emplace_back(entity.second.entity_);
 		}
 	}
-	return entities;
+	return entities;*/
 }

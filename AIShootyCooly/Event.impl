@@ -1,10 +1,3 @@
-/*template<class EventList>
-template<class Event>
-std::shared_ptr<std::function<void(Event)>>
-EventManager<EventList>::addListener(std::function<void(Event)> && func) {
-	return std::make_shared<std::function<void(Event)>>(std::move(func));
-}*/
-
 template <class EventList>
 template <
 	typename Func
@@ -12,5 +5,5 @@ template <
 	, typename
 >
 std::shared_ptr<std::function<void(Event)>> EventManager<EventList>::addListener(Func&& func) {
-	return std::make_shared<std::function<void(Event)>>{std::move(func)};
+	return std::make_shared<std::function<void(Event)>>(std::move(func));
 }

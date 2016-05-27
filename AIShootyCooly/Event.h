@@ -1,26 +1,18 @@
 #pragma once
 
-#include "MplUtil.h"
-
 #include <callable_traits/args.hpp>
 #include <callable_traits/arg_at.hpp>
-#include <boost/mpl/size.hpp>
 #include <functional>
+#include <boost/hana.hpp>
+
+namespace hana = boost::hana;
 
 template<class... Ts>
 struct EventList {
 private:
-	template<typename T>
-	using container = std::vector<std::function<void(T)>>;
-	using myStdTuple = stdTupleCreator<container>;
 public:
-	using setType = typename setCreator<Ts...>::type;
-	using tupleType = typename mpl::fold<
-		setType,
-		std::tuple<>,
-		typename myStdTuple::template toStdTuple<mpl::_1, mpl::_2>
-	>::type;
-	static constexpr auto size = mpl::size<setType>::value;
+	static constexpr auto set = hana::to_set(hana::tuple_t<Ts...>);
+	static constexpr auto size = decltype(hana::size(set))::value;
 };
 
 //std::tuple<std::vector<std::function<void(EVENT)>>>

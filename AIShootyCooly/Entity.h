@@ -16,6 +16,9 @@
 #include <boost/mpl/bool.hpp>
 #include <boost/mpl/plus.hpp>
 #include <boost/mpl/arithmetic.hpp>
+#include <boost/hana.hpp>
+
+namespace hana = boost::hana;
 
 BOOST_STRONG_TYPEDEF(std::size_t, EntityID)
 BOOST_STRONG_TYPEDEF(std::size_t, EntityVersion)
@@ -81,9 +84,9 @@ template<class... Ts>
 struct TagList {
 	using container = std::unordered_set<EntityID>;
 
-	using setType = typename setCreator<Ts...>::type;
+	static constexpr auto set = hana::to_set(hana::tuple_t<Ts...>);
 
-	static constexpr auto size = mpl::size<setType>::value;
+	static constexpr auto size = decltype(hana::size(set))::value;
 };
 
 template<class ComponentList, class TagList>
@@ -92,7 +95,7 @@ class EntityManager {
 	using EntityContainer = std::vector<MyEntity>;
 
 	using ComponentSet = typename ComponentList::setType;
-	using TagSet = typename TagList::setType;
+	static constexpr auto & TagSet = TagList::set;
 
 	typename ComponentList::tupleType componentTuple_;
 	std::array<typename TagList::container, TagList::size> tagArray_;
@@ -107,8 +110,8 @@ class EntityManager {
 public:
 	EntityManager() {
 		// TODO: check if the ComponentList and TagList are of the proper type
-		static_assert(mpl::size<typename setIntersection<ComponentSet, TagSet>::type>::value == 0,
-					  "Tags and Components intersect");
+		//static_assert(mpl::size<typename setIntersection<ComponentSet, TagSet>::type>::value == 0,
+		//			  "Tags and Components intersect");
 	}
 
 	MyEntity createEntity();
